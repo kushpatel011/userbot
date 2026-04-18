@@ -7,11 +7,7 @@ API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
 STRING_SESSION = os.getenv("STRING_SESSION")
 
-# --- OWNER SETTINGS ---
-# Yahan apne CarloOsintBot ki numeric ID dalo taaki sirf wo hi command de sake
-# Isse safety bani rahegi
-ALLOWED_BOT_ID = 123456789 # <--- Apne Bot ki ID se replace karein
-
+# Userbot Client
 app = Client(
     "ub_worker",
     api_id=API_ID,
@@ -22,38 +18,41 @@ app = Client(
 
 BRIDGE_BOT = "@MissRose_bot"
 
-# Command handler: filters.me hata diya gaya hai
+# Yahan se 'filters.me' aur 'filters.user' hata diya hai
+# Ab ye command PUBLIC hai (Bots aur Users dono ke liye)
 @app.on_message(filters.command("fetch", prefixes="."))
 async def fetch_data(client, message):
-    # Safety Check: Sirf aapka Bot ya Aap khud command de sakein
-    if message.from_user.id != ALLOWED_BOT_ID and not message.from_user.is_self:
-        return
-
+    """
+    Command: .fetch @username
+    Ab ye command koi bhi (user ya bot) aapke Userbot ko bhej sakta hai.
+    """
     try:
+        # Check if there is a target username
         if len(message.command) < 2:
             return
         
         target = message.command[1]
-        print(f"📡 Request Received for: {target}")
+        print(f"📡 Global Request for: {target}")
         
-        # 1. Rose Bot ko command bhejna
+        # 1. Rose Bot ko message bhejna
         await client.send_message(BRIDGE_BOT, f"/info {target}")
         
-        # 2. 4 second wait (Rose kabhi kabhi slow hoti hai)
+        # 2. 4 seconds wait (Thoda extra buffer safety ke liye)
         await asyncio.sleep(4)
         
         # 3. Rose ka reply uthana
         async for msg in client.get_chat_history(BRIDGE_BOT, limit=1):
             if msg.text:
-                # Bot ko reply dena
+                # Jisne bhi command bheji, usko Rose ka data reply kar dena
                 await message.reply_text(msg.text)
-                print(f"✅ Data sent back for {target}")
+                print(f"✅ Data delivered for {target}")
+            else:
+                print(f"⚠️ Rose bot didn't send a text response.")
                 
     except Exception as e:
         print(f"❌ Userbot Error: {e}")
-        await message.reply_text(f"Error fetching data: {e}")
 
 if __name__ == "__main__":
-    print("🚀 Userbot Worker is Active on Railway...")
+    print("🚀 Userbot is now PUBLIC. Listening to all users/bots...")
     app.run()
-        
+    
